@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: bK7OYQ2ikfoRMSM
+      POSTGRES_DB: project
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_USER: dbuser
+      DB_PASSWORD: bK7OYQ2ikfoRMSM
+      DB_NAME: project
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
