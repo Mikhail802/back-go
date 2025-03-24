@@ -11,7 +11,6 @@ import (
 
 var verificationCodes = make(map[string]string)
 
-
 func SendVerificationCode(c *fiber.Ctx) error {
 	type Request struct {
 		Email string `json:"email"`
