@@ -6,15 +6,19 @@ import (
 	"net/smtp"
 	"strings"
 	"log"
+	"go_back/internal/models"       
+	"go_back/internal/initializers"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 var verificationCodes = make(map[string]string)
+var user models.User
 
 func SendVerificationCode(c *fiber.Ctx) error {
 	type Request struct {
 		Email string `json:"email"`
+		From  string `json:"from"` // "register" или "recover"
 	}
 
 	var body Request
@@ -22,26 +26,35 @@ func SendVerificationCode(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Неверный запрос"})
 	}
 
-	code := fmt.Sprintf("%06d", rand.Intn(1000000))
 	email := strings.ToLower(body.Email)
+
+	// Если это восстановление, проверяем что пользователь существует
+	if body.From == "recover" {
+		var user models.User
+		if err := initializers.DB.Where("email = ?", email).First(&user).Error; err != nil {
+			return c.Status(404).JSON(fiber.Map{"error": "Пользователь не найден"})
+		}
+	}
+
+	code := fmt.Sprintf("%06d", rand.Intn(1000000))
 	verificationCodes[email] = code
 
-	// Отправка письма
 	from := "ryzhovcodesender@gmail.com"
 	password := "exrgjhlfgebyufka"
-	to := body.Email
 	msg := []byte("Subject: Код подтверждения\n\nВаш код: " + code)
 
 	auth := smtp.PlainAuth("", from, password, "smtp.gmail.com")
-
-	err := smtp.SendMail("smtp.gmail.com:587", auth, from, []string{to}, msg)
+	err := smtp.SendMail("smtp.gmail.com:587", auth, from, []string{email}, msg)
 	if err != nil {
-		log.Println("Ошибка отправки email:", err)
-		return c.Status(500).JSON(fiber.Map{"error": "Ошибка отправки письма. Email может быть недействительным."})
+		log.Println("Ошибка SMTP:", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Ошибка отправки письма"})
 	}
+
+	
 
 	return c.JSON(fiber.Map{"message": "Код отправлен"})
 }
+
 
 
 func VerifyCode(c *fiber.Ctx) error {
