@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net/smtp"
 	"strings"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -22,22 +23,26 @@ func SendVerificationCode(c *fiber.Ctx) error {
 	}
 
 	code := fmt.Sprintf("%06d", rand.Intn(1000000))
-	verificationCodes[strings.ToLower(body.Email)] = code
+	email := strings.ToLower(body.Email)
+	verificationCodes[email] = code
 
-	// Тут отправка письма
+	// Отправка письма
 	from := "ryzhovcodesender@gmail.com"
 	password := "exrgjhlfgebyufka"
 	to := body.Email
 	msg := []byte("Subject: Код подтверждения\n\nВаш код: " + code)
 
 	auth := smtp.PlainAuth("", from, password, "smtp.gmail.com")
+
 	err := smtp.SendMail("smtp.gmail.com:587", auth, from, []string{to}, msg)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Ошибка отправки письма"})
+		log.Println("Ошибка отправки email:", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Ошибка отправки письма. Email может быть недействительным."})
 	}
 
 	return c.JSON(fiber.Map{"message": "Код отправлен"})
 }
+
 
 func VerifyCode(c *fiber.Ctx) error {
 	type Request struct {

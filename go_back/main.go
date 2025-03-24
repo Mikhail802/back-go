@@ -49,7 +49,6 @@ func main() {
 	api.Route("/users", func(router fiber.Router) {
 		router.Post("/login", controllers.LoginUser)
 		router.Post("/register", controllers.CreateUser)
-		router.Post("/reset-password", controllers.ResetPassword)
 		router.Delete("/:userId", controllers.DeleteUser)
 		router.Get("/", controllers.FindUsers)
 		router.Get("/:userId", controllers.FindUserById)
@@ -78,12 +77,6 @@ func main() {
 		router.Get("/", controllers.GetColumns)
 		router.Post("/", controllers.CreateColumn)
 	})
-
-	api.Route("/email", func(router fiber.Router) {
-		router.Post("/send-code", controllers.SendVerificationCode)
-		router.Post("/verify-code", controllers.VerifyCode)
-	})
-	
 
 	addr := fmt.Sprintf("%s:%s", *host, *port)
 	log.Printf("Server is running on %s\n", addr)

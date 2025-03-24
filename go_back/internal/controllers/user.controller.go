@@ -18,38 +18,6 @@ func VerifyPassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-func ResetPassword(c *fiber.Ctx) error {
-	type Request struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-
-	var body Request
-	if err := c.BodyParser(&body); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Неверный формат данных"})
-	}
-
-	email := strings.ToLower(body.Email)
-
-	var user models.User
-	if err := initializers.DB.Where("email = ?", email).First(&user).Error; err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "Пользователь не найден"})
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Ошибка при хешировании пароля"})
-	}
-
-	user.Password = string(hashedPassword)
-	if err := initializers.DB.Save(&user).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Не удалось обновить пароль"})
-	}
-
-	return c.JSON(fiber.Map{"message": "Пароль успешно обновлён"})
-}
-
-
 // CreateUser  создает нового пользователя
 func CreateUser(c *fiber.Ctx) error {
 	var payload *models.CreateUserSchema
