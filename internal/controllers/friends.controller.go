@@ -85,12 +85,12 @@ func GetFriendsList(c *fiber.Ctx) error {
     var friends []models.User
 
     err = initializers.DB.
-        Table("users").
+        Model(&models.User{}). // ← ВАЖНО!
         Joins("JOIN friendships f ON (f.friend_id = users.id OR f.user_id = users.id)").
         Where("f.status = ?", "accepted").
         Where("f.user_id = ? OR f.friend_id = ?", userID, userID).
         Where("users.id != ?", userID).
-        Find(&friends).Error // 🔥 вот ключевое отличие
+        Find(&friends).Error
 
     if err != nil {
         log.Println("❌ Ошибка получения друзей:", err)
