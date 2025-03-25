@@ -75,20 +75,27 @@ func AcceptFriendRequest(c *fiber.Ctx) error {
 
 func GetFriendsList(c *fiber.Ctx) error {
     userIDStr := c.Query("userId")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-	    return c.Status(400).JSON(fiber.Map{"error": "Неверный формат UUID"})
-}
-
+    userID, err := uuid.Parse(userIDStr)
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Неверный формат UUID",
+        })
+    }
 
     var friends []models.User
-    if err := initializers.DB.Raw(`
-        SELECT u.* FROM users u
-        JOIN friendships f ON (f.friend_id = u.id OR f.user_id = u.id)
-        WHERE f.status = 'accepted' AND (f.user_id = ? OR f.friend_id = ?)
-        AND u.id != ?
-    `, userID, userID, userID).Scan(&friends).Error; err != nil {
-        return c.Status(500).JSON(fiber.Map{"error": "Не удалось получить друзей"})
+
+    err = initializers.DB.
+        Table("users").
+        Joins("JOIN friendships f ON (f.friend_id = users.id OR f.user_id = users.id)").
+        Where("f.status = ?", "accepted").
+        Where("f.user_id = ? OR f.friend_id = ?", userID, userID).
+        Where("users.id != ?", userID).
+        Scan(&friends).Error
+
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "Не удалось получить друзей",
+        })
     }
 
     return c.JSON(friends)
