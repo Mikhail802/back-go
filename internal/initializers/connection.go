@@ -39,6 +39,7 @@ func ConnectDB(config *Config) {
 		&models.Column{},
 		&models.Task{},
 		&models.Entry{},
+		&models.Friendship{},
 		
 	); err != nil {
 		log.Fatal("Migrations failed: ", err.Error())
