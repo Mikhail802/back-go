@@ -114,7 +114,7 @@ func GetIncomingRequests(c *fiber.Ctx) error {
             "error": "Неверный формат userId (ожидается UUID)",
         })
     }
-
+    log.Printf("📍 Parsed userID = %v (type: %T)", userID, userID)
     var requests []models.Friendship
     if err := initializers.DB.
         Where("friend_id = ? AND status = ?", userID, "pending").
