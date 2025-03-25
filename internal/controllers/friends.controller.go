@@ -90,9 +90,10 @@ func GetFriendsList(c *fiber.Ctx) error {
         Where("f.status = ?", "accepted").
         Where("f.user_id = ? OR f.friend_id = ?", userID, userID).
         Where("users.id != ?", userID).
-        Scan(&friends).Error
+        Find(&friends).Error // 🔥 вот ключевое отличие
 
     if err != nil {
+        log.Println("❌ Ошибка получения друзей:", err)
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "error": "Не удалось получить друзей",
         })
@@ -100,6 +101,7 @@ func GetFriendsList(c *fiber.Ctx) error {
 
     return c.JSON(friends)
 }
+
 
 func GetIncomingRequests(c *fiber.Ctx) error {
     userIDStr := c.Query("userId")
