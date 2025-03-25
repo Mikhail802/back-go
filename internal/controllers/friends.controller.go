@@ -85,22 +85,23 @@ func GetFriendsList(c *fiber.Ctx) error {
     var friends []models.User
 
     err = initializers.DB.
-        Model(&models.User{}). // ← ВАЖНО!
+        Model(&models.User{}).
         Joins("JOIN friendships f ON (f.friend_id = users.id OR f.user_id = users.id)").
         Where("f.status = ?", "accepted").
-        Where("f.user_id = ? OR f.friend_id = ?", userID, userID).
-        Where("users.id != ?", userID).
+        Where("(f.user_id = ? OR f.friend_id = ?) AND users.id != ?", userID, userID, userID).
         Find(&friends).Error
 
     if err != nil {
         log.Println("❌ Ошибка получения друзей:", err)
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "Не удалось получить друзей",
+            "error": "Не удалоооось получить друзей",
         })
     }
 
     return c.JSON(friends)
 }
+
+
 
 
 func GetIncomingRequests(c *fiber.Ctx) error {
