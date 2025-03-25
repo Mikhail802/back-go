@@ -90,11 +90,12 @@ func GetFriendsList(c *fiber.Ctx) error {
 
     // Запрос с использованием uuid.UUID, без :text и прочего
     err = initializers.DB.
-        Model(&models.User{}).
+        Table("users").
         Joins("JOIN friendships f ON (f.friend_id = users.id OR f.user_id = users.id)").
         Where("f.status = ?", "accepted").
         Where("(f.user_id = ? OR f.friend_id = ?) AND users.id != ?", userID, userID, userID).
-        Find(&friends).Error
+        Scan(&friends).Error
+
 
     if err != nil {
         log.Println("❌ Ошибка получения друзей:", err)
