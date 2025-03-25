@@ -62,6 +62,7 @@ func CreateUser(c *fiber.Ctx) error {
 	newUser := models.User{
 		ID:       uuid.New(),
 		Name:     payload.Name,
+		Username: payload.Username,
 		Email:    payload.Email,
 		Password: utils.GeneratePassword(payload.Password),
 	}
