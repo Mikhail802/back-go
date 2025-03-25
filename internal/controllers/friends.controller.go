@@ -6,6 +6,7 @@ import (
     "go_back/internal/models"
     "go_back/internal/initializers"
 	"github.com/google/uuid"
+    "log"
 
 	
 )
@@ -39,6 +40,7 @@ func SendFriendRequest(c *fiber.Ctx) error {
     }
 
     if err := initializers.DB.Create(&friendship).Error; err != nil {
+        log.Println("❌ Ошибка создания заявки:", err)
         return c.Status(500).JSON(fiber.Map{"error": "Ошибка при создании заявки"})
     }
 
