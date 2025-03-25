@@ -83,6 +83,13 @@ func main() {
 		router.Post("/send-code", controllers.SendVerificationCode)
 		router.Post("/verify-code", controllers.VerifyCode)
 	})
+
+	api.Route("/friends", func(router fiber.Router) {
+		router.Post("/request", controllers.SendFriendRequest)   // отправить заявку
+		router.Post("/accept", controllers.AcceptFriendRequest) // принять заявку
+		router.Get("/", controllers.GetFriendsList)             // список друзей
+		router.Get("/requests", controllers.GetIncomingRequests) // входящие заявки
+	})
 	
 
 	addr := fmt.Sprintf("%s:%s", *host, *port)
