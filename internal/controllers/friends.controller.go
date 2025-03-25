@@ -74,6 +74,7 @@ func AcceptFriendRequest(c *fiber.Ctx) error {
 }
 
 func GetFriendsList(c *fiber.Ctx) error {
+    // Получаем userId из query-параметра
     userIDStr := c.Query("userId")
     userID, err := uuid.Parse(userIDStr)
     if err != nil {
@@ -82,19 +83,23 @@ func GetFriendsList(c *fiber.Ctx) error {
         })
     }
 
+    // Логируем для отладки
+    log.Printf("📍 Parsed userID = %v (type: %T)", userID, userID)
+
     var friends []models.User
 
+    // Запрос с использованием uuid.UUID, без :text и прочего
     err = initializers.DB.
         Model(&models.User{}).
         Joins("JOIN friendships f ON (f.friend_id = users.id OR f.user_id = users.id)").
         Where("f.status = ?", "accepted").
-        Where("(f.user_id:text = ? OR f.friend_id = ?) AND users.id != ?", userID, userID, userID).
+        Where("(f.user_id = ? OR f.friend_id = ?) AND users.id != ?", userID, userID, userID).
         Find(&friends).Error
 
     if err != nil {
         log.Println("❌ Ошибка получения друзей:", err)
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "Не удалоооось получить друзей",
+            "error": "Не удалось получить друзей",
         })
     }
 
@@ -114,7 +119,7 @@ func GetIncomingRequests(c *fiber.Ctx) error {
             "error": "Неверный формат userId (ожидается UUID)",
         })
     }
-    log.Printf("📍 Parsed userID = %v (type: %T)", userID, userID)
+   
     var requests []models.Friendship
     if err := initializers.DB.
         Where("friend_id = ? AND status = ?", userID, "pending").
