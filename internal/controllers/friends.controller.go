@@ -88,7 +88,7 @@ func GetFriendsList(c *fiber.Ctx) error {
         Model(&models.User{}).
         Joins("JOIN friendships f ON (f.friend_id = users.id OR f.user_id = users.id)").
         Where("f.status = ?", "accepted").
-        Where("(f.user_id = ? OR f.friend_id = ?) AND users.id != ?", userID, userID, userID).
+        Where("(f.user_id:text = ? OR f.friend_id = ?) AND users.id != ?", userID, userID, userID).
         Find(&friends).Error
 
     if err != nil {
