@@ -38,11 +38,13 @@ func main() {
 	}))
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:  "*",
-		AllowMethods:  "GET,POST,PUT,DELETE,OPTIONS",
-		AllowHeaders:  "Origin, Content-Type, Accept, Authorization",
-		ExposeHeaders: "Content-Length",
+		AllowOrigins:     "https://kursovaya-ryzhov.ru, http://localhost:8081",
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		ExposeHeaders:    "Content-Length",
+		AllowCredentials: true,
 	}))
+	
 
 	api := app.Group("/api")
 

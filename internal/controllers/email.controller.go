@@ -40,7 +40,7 @@ func SendVerificationCode(c *fiber.Ctx) error {
 	verificationCodes[email] = code
 
 	from := "ryzhovcodesender@gmail.com"
-	password := "exrgjhlfgebyufka"
+	password := "uwmmiwuqjexxjhob"
 	msg := []byte("Subject: Код подтверждения\n\nВаш код: " + code)
 
 	auth := smtp.PlainAuth("", from, password, "smtp.gmail.com")
