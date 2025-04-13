@@ -25,3 +25,26 @@ func CreateColumn(c *fiber.Ctx) error {
 	initializers.DB.Create(&column)
 	return c.JSON(column)
 }
+
+func DeleteColumn(c *fiber.Ctx) error {
+	columnIDStr := c.Params("columnId")
+
+	// Проверка UUID
+	columnID, err := uuid.Parse(columnIDStr)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Некорректный UUID колонки"})
+	}
+
+	// Проверка существования
+	var column models.Column
+	if err := initializers.DB.First(&column, "id = ?", columnID).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Колонка не найдена"})
+	}
+
+	// Удаление (каскадное удаление задач сработает автоматически)
+	if err := initializers.DB.Delete(&column).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Ошибка при удалении колонки"})
+	}
+
+	return c.JSON(fiber.Map{"message": "Колонка успешно удалена"})
+}

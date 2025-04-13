@@ -4,18 +4,26 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // User представляет модель пользователя
 type User struct {
-	ID                uuid.UUID `gorm:"primaryKey" json:"id"`
+	ID                uuid.UUID `gorm:"type:uuid;primaryKey;" json:"id"`
 	Name              string    `json:"name"`
-	Username 		  string 	`gorm:"unique;not null"`
+	Username          string    `gorm:"unique;not null"`
 	Email             string    `gorm:"unique" json:"email"`
+	Picture  		  string
 	Password          string    `json:"-"`
 	PasswordResetCode string    `json:"-"`
 	CodeExpiry        time.Time `json:"-"`
 	CodeUsed          bool      `json:"-"`
+}
+
+// BeforeCreate устанавливает UUID перед созданием записи
+func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
+	user.ID = uuid.New()
+	return
 }
 
 // CreateUser Schema представляет данные для создания нового пользователя
@@ -35,6 +43,6 @@ type UpdateUserSchema struct {
 
 // LoginUser Schema представляет данные для авторизации пользователя
 type LoginUserSchema struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	Identifier string `json:"identifier" binding:"required"`
+	Password   string `json:"password" binding:"required"`
 }

@@ -10,6 +10,7 @@ RUN go mod download
 
 COPY . .
 
+RUN go get gorm.io/datatypes
 RUN go build -o main main.go
 
 FROM alpine

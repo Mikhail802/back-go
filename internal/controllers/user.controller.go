@@ -7,6 +7,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"encoding/json"
+	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -92,25 +94,33 @@ func LoginUser(c *fiber.Ctx) error {
 	}
 
 	var user models.User
-	result := initializers.DB.First(&user, "email = ?", payload.Email)
+
+	// определяем: email или логин
+	query := initializers.DB
+	if strings.Contains(payload.Identifier, "@") {
+		query = query.Where("email = ?", payload.Identifier)
+	} else {
+		query = query.Where("username = ?", payload.Identifier)
+	}
+
+	result := query.First(&user)
 	if result.Error != nil {
-		log.Printf("Login:User  Invalid credentials for email: %s", payload.Email)
+		log.Printf("Login:User  Invalid credentials for: %s", payload.Identifier)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "fail", "message": "Invalid credentials"})
 	}
 
 	if err := VerifyPassword(user.Password, payload.Password); err != nil {
-		log.Printf("Login:User  Invalid password for email: %s", payload.Email)
+		log.Printf("Login:User  Invalid password for: %s", payload.Identifier)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "fail", "message": "Invalid credentials"})
 	}
 
-	// Генерация токена
 	token, err := utils.GenerateToken(user.Email)
 	if err != nil {
-		log.Printf("Login:User  Could not generate token for email: %s, error: %v", payload.Email, err)
+		log.Printf("Login:User  Could not generate token for: %s, error: %v", payload.Identifier, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not generate token"})
 	}
 
-	log.Printf("Login:User  User logged in successfully: %s", payload.Email)
+	log.Printf("Login:User  User logged in successfully: %s", payload.Identifier)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "data": fiber.Map{"user": user, "token": token}})
 }
 
@@ -165,4 +175,39 @@ func FindUserById(c *fiber.Ctx) error {
 
 	log.Printf("FindUser ById: User found with ID: %s", userId)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "data": user})
+}
+
+type GoogleAuthRequest struct {
+	IDToken string `json:"idToken"`
+}
+
+func GoogleLogin(c *fiber.Ctx) error {
+	var body GoogleAuthRequest
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Неверный формат запроса"})
+	}
+
+	resp, err := http.Get("https://oauth2.googleapis.com/tokeninfo?id_token=" + body.IDToken)
+	if err != nil || resp.StatusCode != 200 {
+		return c.Status(401).JSON(fiber.Map{"error": "Невалидный токен Google"})
+	}
+
+	var googleData struct {
+		Email string `json:"email"`
+		Name  string `json:"name"`
+		Picture string `json:"picture"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&googleData); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Ошибка обработки данных Google"})
+	}
+
+	// Найти или создать пользователя
+	var user models.User
+	initializers.DB.FirstOrCreate(&user, models.User{Email: googleData.Email, Name: googleData.Name})
+
+	// Генерация токена
+	token, _ := utils.GenerateToken(user.Email)
+
+	return c.JSON(fiber.Map{"token": token, "user": user})
 }

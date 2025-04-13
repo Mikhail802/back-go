@@ -85,15 +85,15 @@ func GetFriendsList(c *fiber.Ctx) error {
     var friends []models.User
 
     subQuery := `
-        SELECT friend_id as id FROM friendships
+        SELECT friend_id FROM friendships
         WHERE user_id = ? AND status = 'accepted'
         UNION
-        SELECT user_id as id FROM friendships
+        SELECT user_id FROM friendships
         WHERE friend_id = ? AND status = 'accepted'
     `
 
     err = initializers.DB.
-        Where("id IN ("+subQuery+") AND id != ?", userID, userID, userID).
+        Where("id IN (" + subQuery + ")", userID, userID).
         Find(&friends).Error
 
     if err != nil {
@@ -105,6 +105,7 @@ func GetFriendsList(c *fiber.Ctx) error {
 
     return c.JSON(friends)
 }
+
 
 
 
@@ -133,3 +134,24 @@ func GetIncomingRequests(c *fiber.Ctx) error {
     return c.JSON(requests)
 }
 
+func RemoveFriend(c *fiber.Ctx) error {
+	type RemoveRequest struct {
+		UserID   uuid.UUID `json:"userId"`   
+	    FriendID uuid.UUID `json:"friendId"`
+	}
+
+	var body RemoveRequest
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Неверный формат запроса"})
+	}
+
+	// Удалим запись в любом направлении
+	if err := initializers.DB.
+		Where("(user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)",
+			body.UserID, body.FriendID, body.FriendID, body.UserID).
+		Delete(&models.Friendship{}).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Ошибка при удалении друга"})
+	}
+
+	return c.JSON(fiber.Map{"message": "Пользователь удалён из друзей"})
+}

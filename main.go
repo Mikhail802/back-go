@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
+	"go_back/internal/middleware"
 	"go_back/internal/controllers"
 	"go_back/internal/initializers"
 )
@@ -55,19 +56,41 @@ func main() {
 		router.Delete("/:userId", controllers.DeleteUser)
 		router.Get("/", controllers.FindUsers)
 		router.Get("/:userId", controllers.FindUserById)
+		app.Post("/google", controllers.GoogleLogin)
+
 	})
 
 	api.Route("/rooms", func(router fiber.Router) {
+		router.Post("/invite", middleware.AuthMiddleware, controllers.InviteToRoom)
+        router.Get("/invites", controllers.GetRoomInvites)
+		router.Post("/invite/accept", controllers.AcceptRoomInvite)   
+		router.Post("/invite/reject", controllers.RejectRoomInvite) 
+
 		router.Get("/", controllers.GetRooms)
 		router.Post("/", controllers.CreateRoom)
+		
+		
+		router.Post("/assign-role", controllers.AssignRoomRole)
+
 		router.Delete("/:roomId", controllers.DeleteRoom)
-		router.Get("/:roomId", controllers.GetRoomById)
+		router.Get("/:roomId", controllers.GetRoomById)		
+		router.Delete("/:roomId/members/:userId", middleware.AuthMiddleware, controllers.RemoveUserFromRoom)
+		
+
+
+
 	})
 
 	api.Route("/tasks", func(router fiber.Router) {
 		router.Get("/", controllers.GetTasks)
-		router.Post("/", controllers.CreateTask)
-		router.Delete("/:taskId", controllers.DeleteTask)
+		router.Get("/:taskId", controllers.GetTaskById)
+		router.Post("/", middleware.AuthMiddleware, middleware.RoomRoleGuard("admin", "owner"), controllers.CreateTask)
+		router.Delete("/:taskId", middleware.AuthMiddleware, middleware.RoomRoleGuard("admin", "owner"), controllers.DeleteTask)
+		router.Post("/assign", controllers.UpdateTaskAssignment) 
+		router.Put("/:taskId", controllers.UpdateTask)
+
+
+
 	})
 
 	api.Route("/entries", func(router fiber.Router) {
@@ -79,6 +102,8 @@ func main() {
 	api.Route("/columns", func(router fiber.Router) {
 		router.Get("/", controllers.GetColumns)
 		router.Post("/", controllers.CreateColumn)
+		router.Delete("/:columnId", middleware.AuthMiddleware, middleware.RoomRoleGuard("admin", "owner"), controllers.DeleteColumn)
+
 	})
 
 	api.Route("/email", func(router fiber.Router) {
@@ -91,6 +116,7 @@ func main() {
 		router.Post("/accept", controllers.AcceptFriendRequest) // принять заявку
 		router.Get("/", controllers.GetFriendsList)             // список друзей
 		router.Get("/requests", controllers.GetIncomingRequests) // входящие заявки
+		router.Delete("/", middleware.AuthMiddleware, controllers.RemoveFriend)
 	})
 	
 
