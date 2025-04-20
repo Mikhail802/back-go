@@ -57,6 +57,10 @@ func main() {
 		router.Get("/", controllers.FindUsers)
 		router.Get("/:userId", controllers.FindUserById)
 		app.Post("/google", controllers.GoogleLogin)
+                router.Put("/name", middleware.AuthMiddleware, controllers.UpdateUserName)
+                router.Put("/username", middleware.AuthMiddleware, controllers.UpdateUserUsername)
+                router.Put("/avatar", middleware.AuthMiddleware, controllers.UpdateUserAvatar)
+})
 
 	})
 
