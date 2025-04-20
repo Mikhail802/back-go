@@ -211,3 +211,98 @@ func GoogleLogin(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"token": token, "user": user})
 }
+// UpdateUserName обновляет имя пользователя
+func UpdateUserName(c *fiber.Ctx) error {
+    type request struct {
+        Name string `json:"name"`
+    }
+
+    var body request
+    if err := c.BodyParser(&body); err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Неверный формат запроса",
+        })
+    }
+
+    userID := c.Locals("userId").(string) // предполагается, что userId устанавливается в middleware
+
+    db := database.GetDB()
+    if err := db.Model(&models.User{}).Where("id = ?", userID).Update("name", body.Name).Error; err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "Не удалось обновить имя",
+        })
+    }
+
+    return c.JSON(fiber.Map{
+        "message": "Имя успешно обновлено",
+    })
+}
+// UpdateUserUsername обновляет логин пользователя
+func UpdateUserUsername(c *fiber.Ctx) error {
+    type request struct {
+        Username string `json:"username"`
+    }
+
+    var body request
+    if err := c.BodyParser(&body); err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Неверный формат запроса",
+        })
+    }
+
+    userID := c.Locals("userId").(string)
+
+    db := database.GetDB()
+    // Проверка на уникальность логина
+    var count int64
+    db.Model(&models.User{}).Where("username = ?", body.Username).Count(&count)
+    if count > 0 {
+        return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+            "error": "Логин уже занят",
+        })
+    }
+
+    if err := db.Model(&models.User{}).Where("id = ?", userID).Update("username", body.Username).Error; err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "Не удалось обновить логин",
+        })
+    }
+
+    return c.JSON(fiber.Map{
+        "message": "Логин успешно обновлён",
+    })
+}
+// UpdateUserAvatar обновляет аватар пользователя
+func UpdateUserAvatar(c *fiber.Ctx) error {
+    userID := c.Locals("userId").(string)
+
+    fileHeader, err := c.FormFile("avatar")
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Файл аватара не найден",
+        })
+    }
+
+    // Сохранение файла
+    filename := fmt.Sprintf("%s_%s", userID, fileHeader.Filename)
+    filepath := fmt.Sprintf("./uploads/avatars/%s", filename)
+
+    if err := c.SaveFile(fileHeader, filepath); err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "Не удалось сохранить файл",
+        })
+    }
+
+    // Обновление пути к аватару в базе данных
+    db := database.GetDB()
+    if err := db.Model(&models.User{}).Where("id = ?", userID).Update("avatar", filename).Error; err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "Не удалось обновить аватар",
+        })
+    }
+
+    return c.JSON(fiber.Map{
+        "message": "Аватар успешно обновлён",
+        "avatar":  filename,
+    })
+}
