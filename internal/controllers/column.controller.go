@@ -48,3 +48,32 @@ func DeleteColumn(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"message": "Колонка успешно удалена"})
 }
+
+func UpdateColumn(c *fiber.Ctx) error {
+	columnIDStr := c.Params("columnId")
+	columnID, err := uuid.Parse(columnIDStr)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Некорректный UUID колонки"})
+	}
+
+	var updateData struct {
+		Title string `json:"title"`
+	}
+
+	if err := c.BodyParser(&updateData); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Неверный формат данных"})
+	}
+
+	var column models.Column
+	if err := initializers.DB.First(&column, "id = ?", columnID).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Колонка не найдена"})
+	}
+
+	column.Title = updateData.Title
+
+	if err := initializers.DB.Save(&column).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Ошибка при обновлении колонки"})
+	}
+
+	return c.JSON(fiber.Map{"message": "Колонка обновлена", "column": column})
+}

@@ -105,6 +105,10 @@ func DeleteTask(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Нет доступа к удалению задачи"})
 	}
 
+	if err := initializers.DB.Where("task_id = ?", taskId).Delete(&models.TaskAssignment{}).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Ошибка при удалении назначений задачи"})
+	}
+
 	if err := initializers.DB.Delete(&models.Task{}, "id = ?", taskId).Error; err != nil {
 		log.Printf("DeleteTask: Ошибка удаления задачи: %v", err)
 		return c.Status(500).JSON(fiber.Map{"error": "Ошибка при удалении задачи"})

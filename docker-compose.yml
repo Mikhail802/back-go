@@ -22,7 +22,7 @@ services:
     depends_on:
       - postgres
     volumes:
-      - .:/app
+       - /uploads:/uploads
     networks:
       - app-network
 

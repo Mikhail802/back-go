@@ -14,5 +14,6 @@ type Room struct {
 	CreatedAt time.Time    `json:"created_at"`
 
 
-	Members []RoomMember `gorm:"foreignKey:RoomID" json:"members"`
+	Members []RoomMember `gorm:"foreignKey:RoomID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"members"`
+
 }

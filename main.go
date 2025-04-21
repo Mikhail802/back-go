@@ -57,12 +57,12 @@ func main() {
 		router.Get("/", controllers.FindUsers)
 		router.Get("/:userId", controllers.FindUserById)
 		app.Post("/google", controllers.GoogleLogin)
-                router.Put("/name", middleware.AuthMiddleware, controllers.UpdateUserName)
-                router.Put("/username", middleware.AuthMiddleware, controllers.UpdateUserUsername)
-                router.Put("/avatar", middleware.AuthMiddleware, controllers.UpdateUserAvatar)
+        router.Put("/name", middleware.AuthMiddleware, controllers.UpdateUserName)
+        router.Put("/username", middleware.AuthMiddleware, controllers.UpdateUserUsername)
+        router.Put("/avatar", middleware.AuthMiddleware, controllers.UpdateUserAvatar)
 })
 
-	})
+
 
 	api.Route("/rooms", func(router fiber.Router) {
 		router.Post("/invite", middleware.AuthMiddleware, controllers.InviteToRoom)
@@ -107,6 +107,8 @@ func main() {
 		router.Get("/", controllers.GetColumns)
 		router.Post("/", controllers.CreateColumn)
 		router.Delete("/:columnId", middleware.AuthMiddleware, middleware.RoomRoleGuard("admin", "owner"), controllers.DeleteColumn)
+		router.Put("/:columnId", middleware.AuthMiddleware, middleware.RoomRoleGuard("admin", "owner"), controllers.UpdateColumn)
+
 
 	})
 
